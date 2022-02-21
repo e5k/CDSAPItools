@@ -16,6 +16,10 @@ from pathlib import Path
 import pandas as pd
 import webbrowser
 
+plevelList = ['1', '2', '3','5', '7', '10','20', '30', '50','70', '100', '125','150', '175', '200','225', '250', '300','350', '400', '450','500', '550', '600','650', '700', '750','775', '800', '825','850', '875', '900','925', '950', '975','1000'],
+dayList = ['01', '02', '03','04', '05', '06','07', '08', '09','10', '11', '12','13', '14', '15','16', '17', '18','19', '20', '21','22', '23', '24','25', '26', '27','28', '29', '30','31']
+hourList = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
+
 # %%
 def make_date_vec(year_start, year_end, month_start, month_end):
     """ Create a list of list containing all permutations of [month, year]"""
@@ -37,40 +41,23 @@ def make_date_vec(year_start, year_end, month_start, month_end):
             stor.append([iM, iY])
             
     return stor
-   
-def submitIt(dataset, pressure_level, year, month, dayList, hourList, grid, variables, area):            
+
+def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict):
+    """ Submits a CDS API request for each month of the requested time interval. 
     
-    lastday1=calendar.monthrange(year,month)
-    lastday=lastday1[1]
-    dayList = range(lastday+1)
-    dayList = dayList[1:]
-    dayList = [str(i) for i in dayList]
+     Args:
+        out_path (str): Path where files will be downloaded
+        year_start (int): Start year
+        year_end (int): End year
+        month_start (int): Start month
+        month_end (int): End month
+        dataset (str): A valid CDS dataset, e.g., `reanalysis-era5-pressure-levels` or `reanalysis-era5-land` (see https://confluence.ecmwf.int/display/CKB/The+family+of+ERA5+datasets)
+        rDict (dict): Dictionary to be sent to the API
 
-    bdate="%s%02d01"%(year,month)
-    edate="%s%02d%s"%(year,month,lastday)
+    Returns:
+        pd.DataFrame: A file used to later check the status and download requested files is saved under `out_path/ERA5props.csv`
 
-    print('Accessing ERA5 data from ', bdate,' to ',edate,' (YYYYMMDD)')
-
-
-    c = cdsapi.Client(wait_until_complete=False, delete=False)
-    r = c.retrieve(
-        dataset, 
-        {
-            'variable'      : variables,
-            'pressure_level': pressure_level,
-            'product_type'  : 'reanalysis',
-            'year'          : '%s'%(year),
-            'month'         : '%s'%(month),
-            'day'           : dayList,       
-            'area'          : area, # North, West, South, East. Default: global
-            'grid'          : grid, # Latitude/longitude grid: east-west (longitude) and north-south resolution (latitude). Default: 0.25 x 0.25
-            'time'          : hourList,
-            'format'        : 'netcdf' # Supported format: grib and netcdf. Default: grib
-        })
-
-    return r
-
-def submitERA(out_path, year_start, year_end, month_start, month_end, north, south, west, east, dataset, prepend, pressure_level, dayList, hourList, grid, variables):
+    """
     
     # Make sure the folder exists
     Path(out_path).mkdir(parents=True, exist_ok=True)
@@ -79,25 +66,48 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, north, sou
     date_vec = make_date_vec(year_start, year_end, month_start, month_end)
         
     # Setup area
-    if west<0: west=360+west
-    if east<0: east=360+east
-    area = [north, west, south, east]
+    if rDict['area'][1]<0: rDict['area'][1]=360+rDict['area'][1]
+    if rDict['area'][3]<0: rDict['area'][3]=360+rDict['area'][3]
+    # area = [north, west, south, east]
 
+    # Setup storage dataframe
     df = pd.DataFrame()
      
-    # Download
+    # Loop through combinations of months/years and submit queries
     count  = 1
     for iDate in date_vec:
         month, year = iDate[0], iDate[1]
 
-        
+        # Setup day list
+        # lastday1=calendar.monthrange(year,month)
+        # lastday=lastday1[1]
+        # dayList = range(lastday+1)
+        # dayList = dayList[1:]
+        # dayList = [str(i) for i in dayList]
 
-        r = submitIt(dataset, pressure_level, year, month, dayList, hourList, grid, variables, area)
+        # bdate="%s%02d01"%(year,month)
+        # edate="%s%02d%s"%(year,month,lastday)
+
+        print(f'Accessing ERA5 data from {month}/{year}')
+
+        # Update dictionary
+        rDict['year'] = f'{year}'
+        rDict['month'] = f'{month}'
+        rDict['format'] = 'netcdf'
         
+        # Start request
+        c = cdsapi.Client(wait_until_complete=False, delete=False)
+        r = c.retrieve(dataset, rDict)
+
+        # Submit job
+        # r = submitIt(dataset, pressure_level, year, month, dayList, hourList, grid, variables, area)
+
+        # Update the storage
         df = df.append(pd.DataFrame({'r': r.reply['request_id'], 'month': month, 'year': year, 'completed': False}, index=[count]))
         
         count += 1
-        
+    
+    # Save storage to file
     df.to_csv(f'{out_path}/ERA5props.csv')
     
 def checkERA(out_path, prepend):
