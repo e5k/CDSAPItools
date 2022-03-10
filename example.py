@@ -36,6 +36,10 @@
 # - [x] 2022-02-17: Still need to adapt the queries in `submitIt` to match different datasets - for now only `reanalysis-era5-pressure-levels`
 #   - 2022-02-21: Partially fixed, now accepts `reanalysis-era5-pressure-levels` and `reanalysis-era5-land`
 # - [ ] 2022-02-18: Find why counter is not updating
+# 
+# ## Updates:
+# 
+# - 2022-03-08: Added examples for downloading WRF parameters. Also now using the `date` variable
 
 # %%
 # If not running from the same folder, uncomment these two lines and adapt the path
@@ -254,6 +258,11 @@ ax.set_legend()
 
 
 
+
+
+
+
+
 # %% Example for WRF Model level data
 # https://dreambooker.site/2018/04/20/Initializing-the-WRF-model-with-ERA5/
 
@@ -268,71 +277,58 @@ area = [28.7, 342.05, 28.5, 342.25]
 prepend = False
 
 dataset = 'reanalysis-era5-complete'
-out_path = '/Users/seb/Documents/WORK/Projects/GEE/Wind/test'
+out_path = '/Users/seb/Documents/WORK/Projects/GEE/Wind/ML'
 
 # Choose the variables as a function of the selected dataset. 
 # Note: default values are available as `plevelList`, `dayList`, `hourList`
 plevelList = "1/to/137"
 # dayList = ['01', '02', '03','04', '05', '06','07', '08', '09','10', '11', '12','13', '14', '15','16', '17', '18','19', '20', '21','22', '23', '24','25', '26', '27','28', '29', '30','31']
-dayList = ['01', '02', '03']
-hourList = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
+# dayList = ['01', '02', '03']
+hourList = ['00:00']
+# hourList = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
 paramList = "129"
 # paramList = "129/130/131/132/133/152"
 grid = "0.25/0.25"
 
-# Adapt the request dictionary to reflect the chosen dataset. For instance, ERA5 land doesn't need the `pressure_level` field. If you are not sure of what this dictionary is supposed to look like, visit the reference for any dataset provided above, click on the `Download data` tab, setup a mock download and on the `Show API request` green button at the end of the page.
-# Do not add the `year` or `month` field as it will be dynamically added later
-# rDict = {
-#     "class": "ea",
-#     "type": "an",
-#     "product_type": "reanalysis",
-#     "variable": variableList,
-#     "levtype": 'ml',
-#     "pressure_level": plevelList,
-#     "day": dayList,
-#     "time": hourList,
-#     "area": area,
-#     "grid": grid,
-#     "expver": "1",
-#     "stream": "OPER"
-# }
-
 rDict = {
     'class':'ea',
-    'date':'DATE1/to/DATE2',
     'area': area,
     'expver':'1',
     'levelist': '1/to/137',
     'levtype':'ml',
-    'param':'paramList',
+    'param': paramList,
     'stream':'oper',
-    'time':'hourList',
+    'time': '00/to/23/by/1',
     'type':'an',
     'grid':grid,
 }
 
-# %%
-submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict, day_start=1, day_end=3, format='grib')
+# %% Example for WRF surface data
+# https://dreambooker.site/2018/04/20/Initializing-the-WRF-model-with-ERA5/
+
+submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict, day_start=1, day_end=2, format='grib')
 checkERA(out_path, prepend)
 queue()
 
 # %%
-variableList = "172/165/166/167/168/134/151/235/31/34/33/141/139/170/183/236/39/40/41/42"
+paramList = "172/165/166/167/168/134/151/235/31/34/33/141/139/170/183/236/39/40/41/42"
+out_path = '/Users/seb/Documents/WORK/Projects/GEE/Wind/SFC'
 
 rDict = {
-    "class": "ea",
-    "type": "an",
-    "product_type": "reanalysis",
-    "variable": variableList,
-    "levtype": "sfc",
-    "day": dayList,
-    "time": hourList,
-    "area": area,
-    "grid": grid,
-    "expver": "1",
-    "stream": "OPER"
-    
+    'class':'ea',
+    'area':area,
+    'expver':'1',
+    'levtype':'sfc',
+    'param': paramList, 
+    'stream':'oper',
+    'time': '00/to/23/by/1',
+    'type':'an',
+    'grid':"0.25/0.25",
 }
+# %%
+submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict, day_start=1, day_end=2, format='grib')
+checkERA(out_path, prepend)
+
 
 # LEVELIST="1/to/137"
 # PARAMSFC="172/165/166/167/168/134/151/235/31/34/33/141/139/170/183/236/39/40/41/42"
