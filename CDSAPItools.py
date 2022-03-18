@@ -107,6 +107,9 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
     if rDict['area'][1]<0: rDict['area'][1]=360+rDict['area'][1]
     if rDict['area'][3]<0: rDict['area'][3]=360+rDict['area'][3]
 
+    # Check that last day actually matches what is specified in year/month 2022-03-18
+    day_end = day_end if day_end==calendar.monthrange(year_end,month_end)[1] else calendar.monthrange(year_end,month_end)[1]
+    
     # Setup storage dataframe
     df = pd.DataFrame()
      
@@ -118,11 +121,15 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
             month, year = iDate[0], iDate[1]
             print(f'Accessing {dataset} data for {month}/{year}')
             
+            # Computes days 2022-03-18
+            dS = day_start if month==month_start else 1
+            dE = day_end if month==month_end else calendar.monthrange(year,month)[1]
+            
             # 2022-03-18 using /to/ was returning an error when not using the `-complete` dataset required for WRF. This seems to fix it
             if dataset == 'reanalysis-era5-complete':
-                rDict['date'] = f'{year}{month:02d}01/to/{year}{month:02d}31'
+                rDict['date'] = f'{year}{month:02d}{dS:02d}/to/{year}{month:02d}{dE:02d}'
             else:
-                rDict['date'] = f'{year}{month:02d}01/{year}{month:02d}31'
+                rDict['date'] = f'{year}{month:02d}{dS:02d}/{year}{month:02d}{dE:02d}'
         else:
             day, month, year = iDate[0], iDate[1], iDate[2]
             print(f'Accessing {dataset} data for {day}/{month}/{year}')
@@ -170,23 +177,22 @@ def checkERA(out_path, prepend):
             
             if 'day' in df.columns:
                 day = df.iloc[i].day
-
-                
+       
             if format == 'netcdf':
-                fileExt = '.nc'
+                fileExt = 'nc'
             else: 
-                fileExt = '.grb'
+                fileExt = 'grb'
                 
             if prepend:
                 if 'day' in df.columns:
-                    outfile = "%s/%05d_%04d_%02d_%02d.nc"%(out_path, count, year, month, day)
+                    outfile = "%s/%05d_%04d_%02d_%02d.%s"%(out_path, count, year, month, day, fileExt)
                 else:
-                    outfile = "%s/%05d_%04d_%02d.nc"%(out_path, count, year, month)
+                    outfile = "%s/%05d_%04d_%02d.%s"%(out_path, count, year, month, fileExt)
             else:
                 if 'day' in df.columns:
-                    outfile = "%s/%04d_%02d_%02d.nc"%(out_path, year ,month,day)
+                    outfile = "%s/%04d_%02d_%02d.%s"%(out_path, year ,month,day, fileExt)
                 else:
-                    outfile = "%s/%04d_%02d.nc"%(out_path, year ,month)
+                    outfile = "%s/%04d_%02d.%s"%(out_path, year ,month, fileExt)
             
             if not df.iloc[i].completed:
                 reply = dict(request_id=df.iloc[i]['r']) # request_id from above
@@ -197,7 +203,7 @@ def checkERA(out_path, prepend):
                 print(result)
                 if reply['state'] == 'completed':
                     cnt += 1
-                    df.iloc[i]['completed'] = True
+                    df.loc[df.iloc[[i]].index, 'completed'] = True
                     result.download(outfile)
         
         df.to_csv(f'{out_path}/ERA5props.csv')            
