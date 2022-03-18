@@ -102,7 +102,7 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
         date_vec = make_date_vec(year_start, year_end, month_start, month_end)
     else:
         date_vec = make_date_vec(year_start, year_end, month_start, month_end, day_start=day_start, day_end=day_end)
-        
+
     # Setup area
     if rDict['area'][1]<0: rDict['area'][1]=360+rDict['area'][1]
     if rDict['area'][3]<0: rDict['area'][3]=360+rDict['area'][3]
@@ -116,12 +116,22 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
         
         if dt == 'month':
             month, year = iDate[0], iDate[1]
-            print(f'Accessing ERA5 data for {month}/{year}')
-            rDict['date'] = f'{year}{month:02d}01/to/{year}{month:02d}31'
+            print(f'Accessing {dataset} data for {month}/{year}')
+            
+            # 2022-03-18 using /to/ was returning an error when not using the `-complete` dataset required for WRF. This seems to fix it
+            if dataset == 'reanalysis-era5-complete':
+                rDict['date'] = f'{year}{month:02d}01/to/{year}{month:02d}31'
+            else:
+                rDict['date'] = f'{year}{month:02d}01/{year}{month:02d}31'
         else:
             day, month, year = iDate[0], iDate[1], iDate[2]
-            print(f'Accessing ERA5 data for {day}/{month}/{year}')
-            rDict['date'] = f'{year}{month:02d}{day:02d}/to/{year}{month:02d}{day:02d}'
+            print(f'Accessing {dataset} data for {day}/{month}/{year}')
+            
+            # 2022-03-18 using /to/ was returning an error when not using the `-complete` dataset required for WRF. This seems to fix it
+            if dataset == 'reanalysis-era5-complete':
+                rDict['date'] = f'{year}{month:02d}{day:02d}/to/{year}{month:02d}{day:02d}'
+            else:
+                rDict['date'] = f'{year}{month:02d}{day:02d}/{year}{month:02d}{day:02d}'
         
         if format == 'netcdf':
             rDict['format'] = 'netcdf'
@@ -158,15 +168,25 @@ def checkERA(out_path, prepend):
             month = df.iloc[i].month
             format = df.iloc[i]['format']
             
+            if 'day' in df.columns:
+                day = df.iloc[i].day
+
+                
             if format == 'netcdf':
                 fileExt = '.nc'
             else: 
                 fileExt = '.grb'
                 
             if prepend:
-                outfile = "%s/%05d_%04d_%02d.nc"%(out_path, count, year, month)
+                if 'day' in df.columns:
+                    outfile = "%s/%05d_%04d_%02d_%02d.nc"%(out_path, count, year, month, day)
+                else:
+                    outfile = "%s/%05d_%04d_%02d.nc"%(out_path, count, year, month)
             else:
-                outfile = "%s/%04d_%02d.nc"%(out_path, year ,month)
+                if 'day' in df.columns:
+                    outfile = "%s/%04d_%02d_%02d.nc"%(out_path, year ,month,day)
+                else:
+                    outfile = "%s/%04d_%02d.nc"%(out_path, year ,month)
             
             if not df.iloc[i].completed:
                 reply = dict(request_id=df.iloc[i]['r']) # request_id from above

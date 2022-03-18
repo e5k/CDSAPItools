@@ -171,7 +171,7 @@ checkERA(out_path, prepend)
 
 
 
-# %% Debug
+# %% Debug to add the daily granularity option
 
 year_start  = 2013
 year_end    = 2013
@@ -198,11 +198,30 @@ rDict = {
     'grid': "0.25/0.25",
 }
 
+# %%
 submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict, format='grib',
           day_start=day_start, day_end=day_end, dt='day')
+checkERA(out_path, prepend)
 
+#%%
 
-                
+paramList = "172/165/166/167/168/134/151/235/31/34/33/141/139/170/183/236/39/40/41/42"
+out_path = '/Users/seb/Documents/WORK/Projects/Vegetation/WRF/CC2011/SFC'
 
+rDict = {
+    'class':'ea',
+    'area':area,
+    'expver':'1',
+    'levtype':'sfc',
+    'param': paramList, 
+    'stream':'oper',
+    'time': '00/to/23/by/1',
+    'type':'an',
+    'grid':"0.25/0.25",
+}
+# %%
+submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict, format='grib',
+          day_start=day_start, day_end=day_end, dt='day')
+checkERA(out_path, prepend)
 
 # %%
