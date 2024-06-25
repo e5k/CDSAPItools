@@ -16,19 +16,33 @@ from pathlib import Path
 import pandas as pd
 import webbrowser
 import numpy as np
-import numpy as np
-import xarray
+import xarray as xr
 from windrose import WindroseAxes
 import matplotlib.cm as cm
 
 
-plevelList = ['1', '2', '3','5', '7', '10','20', '30', '50','70', '100', '125','150', '175', '200','225', '250', '300','350', '400', '450','500', '550', '600','650', '700', '750','775', '800', '825','850', '875', '900','925', '950', '975','1000'],
+plevelList = ['1', '2', '3','5', '7', '10','20', '30', '50','70', '100', '125','150', '175', '200','225', '250', '300','350', '400', '450','500', '550', '600','650', '700', '750','775', '800', '825','850', '875', '900','925', '950', '975','1000']
 dayList = ['01', '02', '03','04', '05', '06','07', '08', '09','10', '11', '12','13', '14', '15','16', '17', '18','19', '20', '21','22', '23', '24','25', '26', '27','28', '29', '30','31']
 hourList = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
 
 # %%
 def make_date_vec(year_start, year_end, month_start, month_end, day_start=None, day_end=None):
-    """ Create a list of list containing all permutations of [month, year]"""
+    """
+    Generate a list of date vectors based on the specified start and end years, months, and days.
+
+    Args:
+        year_start (int): The starting year.
+        year_end (int): The ending year.
+        month_start (int): The starting month.
+        month_end (int): The ending month.
+        day_start (int, optional): The starting day. Defaults to None.
+        day_end (int, optional): The ending day. Defaults to None.
+
+    Returns:
+        list: A list of date vectors, where each vector contains [day, month, year] if day_start and day_end are specified,
+              or [month, year] if day_start and day_end are None.
+    """
+    
     stor = []
     # Loop through years
     for iY in range(year_start, year_end+1):
@@ -74,24 +88,24 @@ def make_date_vec(year_start, year_end, month_start, month_end, day_start=None, 
     return stor
 
 def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict, day_start=1, day_end=31, format='netcdf', dt='month'):
-    """ Submits a CDS API request for each month of the requested time interval. 
-    
-     Args:
-        out_path (str): Path where files will be downloaded
-        year_start (int): Start year
-        year_end (int): End year
-        month_start (int): Start month
-        month_end (int): End month
-        dataset (str): A valid CDS dataset, e.g., `reanalysis-era5-pressure-levels` or `reanalysis-era5-land` (see https://confluence.ecmwf.int/display/CKB/The+family+of+ERA5+datasets)
-        rDict (dict): Dictionary to be sent to the API
-        day_start (int): First day to retrieve (default: 1)
-        day_end (int): Last day to retrieve (default: 31)
-        format (str): Accepts 'grib' and 'netcdf'
-        dt (str): Defines the temporal granularity, accepts 'month' and 'day'
-        
-    Returns:
-        pd.DataFrame: A file used to later check the status and download requested files is saved under `out_path/ERA5props.csv`
+    """
+    Submits a CDS API request for each month or day of the requested time interval.
 
+    Parameters:
+    - out_path (str): The path to the output folder where the downloaded data will be saved.
+    - year_start (int): The starting year of the time interval.
+    - year_end (int): The ending year of the time interval.
+    - month_start (int): The starting month of the time interval.
+    - month_end (int): The ending month of the time interval.
+    - dataset (str): The name of the dataset to retrieve from the CDS API.
+    - rDict (dict): A dictionary containing the parameters for the CDS API request.
+    - day_start (int, optional): The starting day of the time interval. Defaults to 1.
+    - day_end (int, optional): The ending day of the time interval. Defaults to 31.
+    - format (str, optional): The format of the downloaded data. Defaults to 'netcdf'.
+    - dt (str, optional): The time interval of the request. Can be 'month' or 'day'. Defaults to 'month'.
+
+    Returns:
+    None
     """
     
     # Make sure the folder exists
@@ -135,23 +149,29 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
             print(f'Accessing {dataset} data for {day}/{month}/{year}')
             
             # 2022-03-18 using /to/ was returning an error when not using the `-complete` dataset required for WRF. This seems to fix it
-            if dataset == 'reanalysis-era5-complete':
-                rDict['date'] = f'{year}{month:02d}{day:02d}/to/{year}{month:02d}{day:02d}'
-            else:
-                rDict['date'] = f'{year}{month:02d}{day:02d}/{year}{month:02d}{day:02d}'
-        
+            # if dataset == 'reanalysis-era5-complete':
+            #     rDict['date'] = f'{year}{month:02d}{day:02d}/to/{year}{month:02d}{day:02d}'
+            # else:
+            #     rDict['date'] = f'{year}{month:02d}{day:02d}/{year}{month:02d}{day:02d}'
+
+            # 2022-11-02 Trying Alex's approach
+            rDict['date'] = f'{year}{month:02d}{day:02d}'
+            
         if format == 'netcdf':
             rDict['format'] = 'netcdf'
         
+        print(rDict)
         # Start request
         c = cdsapi.Client(wait_until_complete=False, delete=False)
         r = c.retrieve(dataset, rDict)
 
         # Update the storage
         if dt == 'month':
-            df = df.append(pd.DataFrame({'r': r.reply['request_id'], 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count]))
+            # df = df.append(pd.DataFrame({'r': r.reply['request_id'], 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count]))
+            df = pd.concat([df, pd.DataFrame({'r': r.reply['request_id'], 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count])])
         else:
-            df = df.append(pd.DataFrame({'r': r.reply['request_id'], 'day': day, 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count]))
+            # df = df.append(pd.DataFrame({'r': r.reply['request_id'], 'day': day, 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count]))
+            df = pd.concat([pd.DataFrame({'r': r.reply['request_id'], 'day': day, 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count])])
             
         count += 1
     
@@ -159,17 +179,25 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
     df.to_csv(f'{out_path}/ERA5props.csv')
     
 def checkERA(out_path, prepend):
-    
+    """
+    Checks the status of ERA5 data files and downloads any pending files.
+
+    Args:
+        out_path (str): The path to the output directory.
+        prepend (bool): Whether to prepend the file name with file number.
+
+    Returns:
+        None
+    """
     df = pd.read_csv(f'{out_path}/ERA5props.csv', index_col=0)
     
+    # Check if all files have already been downloaded
     if df.completed.sum() == df.shape[0]:
         print('All files have already been downloaded and I refuse to work overtime...')
     else:
-    #     print(f'{df.completed.sum() }/{df.shape[0]} files downloaded...')
-        
         cnt = 0
         for i in range(0, df.shape[0]):
-            
+            # Extract information from the dataframe
             count = df.iloc[i].name
             year = df.iloc[i].year
             month = df.iloc[i].month
@@ -181,8 +209,9 @@ def checkERA(out_path, prepend):
             if format == 'netcdf':
                 fileExt = 'nc'
             else: 
-                fileExt = 'grb'
+                fileExt = 'grib'
                 
+            # Generate the output file path
             if prepend:
                 if 'day' in df.columns:
                     outfile = "%s/%05d_%04d_%02d_%02d.%s"%(out_path, count, year, month, day, fileExt)
@@ -194,6 +223,7 @@ def checkERA(out_path, prepend):
                 else:
                     outfile = "%s/%04d_%02d.%s"%(out_path, year ,month, fileExt)
             
+            # Check if the file is already completed
             if not df.iloc[i].completed:
                 reply = dict(request_id=df.iloc[i]['r']) # request_id from above
                 new_client = cdsapi.Client(wait_until_complete=False, delete=False)
@@ -204,10 +234,13 @@ def checkERA(out_path, prepend):
                 if reply['state'] == 'completed':
                     cnt += 1
                     df.loc[df.iloc[[i]].index, 'completed'] = True
-                    result.download(outfile)
+                    df.to_csv(f'{out_path}/ERA5props.csv') 
+                    try:
+                        result.download(outfile)
+                    except:
+                        print(f'Error downloading {outfile}')
         
-        df.to_csv(f'{out_path}/ERA5props.csv')            
-        
+        # Check if all files have been completed
         if df.completed.sum() == df.shape[0]:
             print('Woohooo - all done!')
         else:
@@ -216,11 +249,41 @@ def checkERA(out_path, prepend):
 def queue():
     webbrowser.open('https://cds.climate.copernicus.eu/cdsapp#!/yourrequests', new=0, autoraise=True)
 
-def loadNc(path):
+def loadNc(out_path, save_path=None):
+    """
+    Load NetCDF files from the specified `out_path` and optionally save the loaded data to a new NetCDF file at `save_path`.
+
+    Parameters:
+    - out_path (str): The path to the NetCDF files to be loaded.
+    - save_path (str, optional): The path to save the loaded data as a new NetCDF file. If not provided, the data will not be saved.
+
+    Returns:
+    - None
+
+    """
     
     # Load data
-    ds = xarray.open_dataset(path)
+    ds = xr.open_mfdataset(f'{out_path}*.nc')
+    ds = ds.sortby('time')
+    
+    # Save if requested
+    if save_path is not None:
+        ds.to_netcdf(save_path)
+        
+    return ds
+    
+    
+def ncTodf(ds):
+    """
+    Converts an xarray dataset to a pandas dataframe and reorders the indices.
 
+    Parameters:
+    ds (xarray.Dataset): The xarray dataset to be converted.
+
+    Returns:
+    pandas.DataFrame: The converted pandas dataframe with reordered indices.
+    """
+    
     # Convert xarray to pandas and reorder index
     df = ds.to_dataframe()
 
@@ -233,11 +296,15 @@ def loadNc(path):
     # In case ERA5 Land, rename `u10` to `u`
     if 'u10' in df.columns:
         df = df.rename({'u10':'u','v10':'v'},axis=1)
+    df = df.round(2)
         
     return df.reorder_levels(levels_var)
     
 def getPoint(df, lat, lon):
 
+    # Make sure lon is between 0 and 360
+    if lon<0: lon = 360 + lon
+    
     # Find closest point
     lonVal = findNearest(df.index.get_level_values('longitude').values, lon)
     latVal = findNearest(df.index.get_level_values('latitude').values, lat)
@@ -250,12 +317,35 @@ def getPoint(df, lat, lon):
         # print(df.head())
         return df.loc[latVal, lonVal, :]
     
-def vec2wind(df):   
+def vec2wind(df, drop_uv=True):
+    """
+    Converts vector components (u and v) to wind speed and direction.
+
+    Parameters:
+    - df (pandas.DataFrame or xarray.Dataset): The input data containing vector components.
+    - drop_uv (bool, optional): Whether to drop the u and v columns after conversion. Default is True.
+
+    Returns:
+    - df (pandas.DataFrame or xarray.Dataset): The input data with added columns for wind speed and direction.
+    """
+    
     # Compute velocity and direction from u and v
     df['speed'] = np.sqrt(np.power(df['u'],2) + np.power(df['v'],2))
     df['direction'] = np.degrees(np.arctan2(df['u'],df['v']))
-    df.loc[df['direction']<0, 'direction'] = 360 + df.loc[df['direction']<0, 'direction']
+    
+    # Correct directions
+    if isinstance(df, xr.core.dataset.Dataset):
+        df = xr.where(df.direction<0, 360+df.direction, df.direction )
+    else:
+        df.loc[df['direction']<0, 'direction'] = 360 + df.loc[df['direction']<0, 'direction']
 
+    # Drop u and v if requested
+    if drop_uv:
+        if isinstance(df, xr.core.dataset.Dataset):
+            df = df.drop(['u', 'v'])
+        else:
+            df = df.drop(['u', 'v'], axis=1)
+        
     return df
 
 def getLevel(df, alt):
@@ -276,4 +366,3 @@ def findNearest(array, num):
     # nearest_val = array[abs(array-num)==abs(array-num).min()] # If you directly want the element of array (array) nearest to the given number (num)
     val = np.unique(array[abs(array-num)==abs(array-num).min()]) # If you directly want the element of array (array) nearest to the given number (num)
     return val[0]
-# %%

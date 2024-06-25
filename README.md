@@ -26,9 +26,3 @@ pip install cdsapi pandas
 
 - https://github.com/ecmwf/cdsapi/issues/2
 - https://github.com/ecmwf/cdsapi/blob/master/examples/example-era5-update.py
-
-
-## To do:
-
-- [ ] 2022-02-17: Still need to adapt the queries in `submitIt` to match different datasets - for now only `reanalysis-era5-pressure-levels`
-- [ ] 2022-02-18: Find why counter is not updatin
