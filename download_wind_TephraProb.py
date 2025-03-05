@@ -77,8 +77,6 @@ variableList = ['geopotential', 'u_component_of_wind', 'v_component_of_wind', 't
 #%%
 grid = [0.25, 0.25]
 
-
-
 # Adapt the request dictionary to reflect the chosen dataset. For instance, ERA5 land doesn't need the `pressure_level` field. If you are not sure of what this dictionary is supposed to look like, visit the reference for any dataset provided above, click on the `Download data` tab, setup a mock download and on the `Show API request` green button at the end of the page.
 # Do not add the `year` or `month` field as it will be dynamically added later
 rDict = {

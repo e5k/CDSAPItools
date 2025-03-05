@@ -250,7 +250,7 @@ def checkERA(out_path, prepend=False):
 def queue():
     webbrowser.open('https://cds.climate.copernicus.eu/requests?tab=all', new=0, autoraise=True)
 
-def loadNc(out_path, save_path=None, time_dim='valid_time', process=True, drop_uv=True):
+def loadNc(out_path, save_path=None, time_dim='valid_time', process=True, drop_uv=True, dtype=np.int16):
     """
     Load NetCDF files from the specified `out_path` and optionally save the loaded data to a new NetCDF file at `save_path`.
 
@@ -265,6 +265,23 @@ def loadNc(out_path, save_path=None, time_dim='valid_time', process=True, drop_u
     - xarray.Dataset: The loaded wind data.
 
     """
+    def calculate_scale_offset(data, dtype=np.int16):
+        """Calculate optimal scale_factor and add_offset for a given data array."""
+        data_min = np.nanmin(data)
+        data_max = np.nanmax(data)
+        
+        # Handle cases with no range
+        if data_max == data_min:
+            return 1.0, 0.0
+        
+        # Set add_offset as the midpoint
+        add_offset = (data_max + data_min) / 2
+        
+        # Calculate scale_factor to fit data in the integer range
+        int_info = np.iinfo(dtype)
+        scale_factor = (data_max - data_min) / (int_info.max - int_info.min)
+        
+        return scale_factor, add_offset
     
     # Load data
     ds = xr.open_mfdataset(f'{out_path}*.nc',decode_cf=False)
@@ -287,10 +304,22 @@ def loadNc(out_path, save_path=None, time_dim='valid_time', process=True, drop_u
             ds = ds.drop('expver')
             
     # Set compression options
-    comp = dict(zlib=True, complevel=4)
-    # Apply compression to each variable
-    encoding = {var: comp for var in ds.data_vars}
-    
+    encoding = {}
+    for var in ds.data_vars:
+        data = ds[var].values
+        
+        # Compute scale and offset
+        scale_factor, add_offset = calculate_scale_offset(data, dtype)
+        
+        # Store the encoding options
+        encoding[var] = {
+            "dtype": dtype.__name__,
+            "scale_factor": scale_factor,
+            "add_offset": add_offset,
+            "zlib": True,
+            "complevel": 4,
+        }
+
     # Save if requested
     if save_path is not None:
         print(f'- Saving data to {save_path}')
