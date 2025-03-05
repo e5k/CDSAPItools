@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Bokeh Plot</title>
+    <style>
+      html, body {
+        box-sizing: border-box;
+        display: flow-root;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.6.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.6.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.6.1.min.js"></script>
+    <script type="text/javascript">
+        Bokeh.set_log_level("info");
+    </script>
+  </head>
+  <body>
+    <div id="acea3b7d-dfdc-46f9-a111-caebf86e8f6a" data-root-id="p1052" style="display: contents;"></div>
+  
+    <script type="application/json" id="fd72a874-e804-41e7-952f-d07ff5204cda">
+      {"3525b90b-74b0-427e-97d3-630195fce5fa":{"version":"3.6.1","title":"Bokeh Application","roots":[{"type":"object","name":"DataTable","id":"p1052","attributes":{"width":800,"height":300,"source":{"type":"object","name":"ColumnDataSource","id":"p1030","attributes":{"selected":{"type":"object","name":"Selection","id":"p1031","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1032"},"data":{"type":"map","entries":[["Time",["8:30-10","10:30-11:30","14:15-15:15","15:45-16:30"]],["Monday",["3-1.html","2-4.html","3-6.html","3-6.html"]],["Tuesday",["5-1.html","3-2.html","4-1.html","4-1.html"]],["Wednesday",["1-1.html","3-1.html","1-9.html","1-9.html"]],["Thursday",["6-8.html","2-1.html","3-2.html","3-2.html"]]]}}},"view":{"type":"object","name":"CDSView","id":"p1056","attributes":{"filter":{"type":"object","name":"AllIndices","id":"p1057"}}},"columns":[{"type":"object","name":"TableColumn","id":"p1033","attributes":{"field":"Time","title":"Time","formatter":{"type":"object","name":"StringFormatter","id":"p1034"},"editor":{"type":"object","name":"StringEditor","id":"p1035"}}},{"type":"object","name":"TableColumn","id":"p1037","attributes":{"field":"Monday","title":"Monday","formatter":{"type":"object","name":"HTMLTemplateFormatter","id":"p1036","attributes":{"template":"\n    &lt;a href=\"@link\" target=\"_blank\" style=\"text-decoration: none; color: black;\" \n    onmouseover=\"showTooltip('@Monday')\" \n    onmouseout=\"hideTooltip()\"&gt;@Monday&lt;/a&gt;\n"}},"editor":{"type":"object","name":"StringEditor","id":"p1039"}}},{"type":"object","name":"TableColumn","id":"p1041","attributes":{"field":"Tuesday","title":"Tuesday","formatter":{"type":"object","name":"HTMLTemplateFormatter","id":"p1040","attributes":{"template":"\n    &lt;a href=\"@link\" target=\"_blank\" style=\"text-decoration: none; color: black;\" \n    onmouseover=\"showTooltip('@Tuesday')\" \n    onmouseout=\"hideTooltip()\"&gt;@Tuesday&lt;/a&gt;\n"}},"editor":{"type":"object","name":"StringEditor","id":"p1043"}}},{"type":"object","name":"TableColumn","id":"p1045","attributes":{"field":"Wednesday","title":"Wednesday","formatter":{"type":"object","name":"HTMLTemplateFormatter","id":"p1044","attributes":{"template":"\n    &lt;a href=\"@link\" target=\"_blank\" style=\"text-decoration: none; color: black;\" \n    onmouseover=\"showTooltip('@Wednesday')\" \n    onmouseout=\"hideTooltip()\"&gt;@Wednesday&lt;/a&gt;\n"}},"editor":{"type":"object","name":"StringEditor","id":"p1047"}}},{"type":"object","name":"TableColumn","id":"p1049","attributes":{"field":"Thursday","title":"Thursday","formatter":{"type":"object","name":"HTMLTemplateFormatter","id":"p1048","attributes":{"template":"\n    &lt;a href=\"@link\" target=\"_blank\" style=\"text-decoration: none; color: black;\" \n    onmouseover=\"showTooltip('@Thursday')\" \n    onmouseout=\"hideTooltip()\"&gt;@Thursday&lt;/a&gt;\n"}},"editor":{"type":"object","name":"StringEditor","id":"p1051"}}}],"index_position":null}}]}}
+    </script>
+    <script type="text/javascript">
+      (function() {
+        const fn = function() {
+          Bokeh.safely(function() {
+            (function(root) {
+              function embed_document(root) {
+              const docs_json = document.getElementById('fd72a874-e804-41e7-952f-d07ff5204cda').textContent;
+              const render_items = [{"docid":"3525b90b-74b0-427e-97d3-630195fce5fa","roots":{"p1052":"acea3b7d-dfdc-46f9-a111-caebf86e8f6a"},"root_ids":["p1052"]}];
+              root.Bokeh.embed.embed_items(docs_json, render_items);
+              }
+              if (root.Bokeh !== undefined) {
+                embed_document(root);
+              } else {
+                let attempts = 0;
+                const timer = setInterval(function(root) {
+                  if (root.Bokeh !== undefined) {
+                    clearInterval(timer);
+                    embed_document(root);
+                  } else {
+                    attempts++;
+                    if (attempts > 100) {
+                      clearInterval(timer);
+                      console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                    }
+                  }
+                }, 10, root)
+              }
+            })(window);
+          });
+        };
+        if (document.readyState != "loading") fn();
+        else document.addEventListener("DOMContentLoaded", fn);
+      })();
+    </script>
+  </body>
+</html>
+    <div id="tooltip" style="position: absolute; display: none; padding: 10px; background: #333; color: #fff; border-radius: 5px;"></div>
+    <script>
+        function showTooltip(info) {
+            var tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = "Class Info: " + info;
+            tooltip.style.display = 'block';
+            document.onmousemove = function(e) {
+                tooltip.style.top = (e.clientY + 10) + 'px';
+                tooltip.style.left = (e.clientX + 10) + 'px';
+            }
+        }
+        function hideTooltip() {
+            var tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'none';
+        }
+    </script>

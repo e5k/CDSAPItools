@@ -118,8 +118,8 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
         date_vec = make_date_vec(year_start, year_end, month_start, month_end, day_start=day_start, day_end=day_end)
 
     # Setup area
-    if rDict['area'][1]<0: rDict['area'][1]=360+rDict['area'][1]
-    if rDict['area'][3]<0: rDict['area'][3]=360+rDict['area'][3]
+    # if rDict['area'][1]<0: rDict['area'][1]=360+rDict['area'][1]
+    # if rDict['area'][3]<0: rDict['area'][3]=360+rDict['area'][3]
 
     # Check that last day actually matches what is specified in year/month 2022-03-18
     day_end = day_end if day_end==calendar.monthrange(year_end,month_end)[1] else calendar.monthrange(year_end,month_end)[1]
@@ -178,7 +178,7 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
     # Save storage to file
     df.to_csv(f'{out_path}/ERA5props.csv')
     
-def checkERA(out_path, prepend):
+def checkERA(out_path, prepend=False):
     """
     Checks the status of ERA5 data files and downloads any pending files.
 
@@ -227,7 +227,8 @@ def checkERA(out_path, prepend):
             if not df.iloc[i].completed:
                 reply = dict(request_id=df.iloc[i]['r']) # request_id from above
                 new_client = cdsapi.Client(wait_until_complete=False, delete=False)
-                result = cdsapi.api.Result(new_client, reply)
+                # result = cdsapi.api.Result(new_client, reply)
+                result = new_client.client.get_remote(df.iloc[i]['r']) 
                 result.update()
                 reply = result.reply
                 print(result)
@@ -247,29 +248,54 @@ def checkERA(out_path, prepend):
             print(f'{cnt} new files completed, total = {df.completed.sum() }/{df.shape[0]}. For more info, call `queue`')
         
 def queue():
-    webbrowser.open('https://cds.climate.copernicus.eu/cdsapp#!/yourrequests', new=0, autoraise=True)
+    webbrowser.open('https://cds.climate.copernicus.eu/requests?tab=all', new=0, autoraise=True)
 
-def loadNc(out_path, save_path=None):
+def loadNc(out_path, save_path=None, time_dim='valid_time', process=True, drop_uv=True):
     """
     Load NetCDF files from the specified `out_path` and optionally save the loaded data to a new NetCDF file at `save_path`.
 
     Parameters:
     - out_path (str): The path to the NetCDF files to be loaded.
     - save_path (str, optional): The path to save the loaded data as a new NetCDF file. If not provided, the data will not be saved.
-
+    - time_dim (str, optional): The name of the time dimension in the NetCDF files. Defaults to 'valid_time'.
+    - process (bool, optional): Whether to process the loaded data (e.g., compute wind speed and direction). Defaults to True.
+    - drop_uv (bool, optional): Whether to drop the original u and v wind components after computing wind speed and direction. Defaults to True.
+    
     Returns:
-    - None
+    - xarray.Dataset: The loaded wind data.
 
     """
     
     # Load data
-    ds = xr.open_mfdataset(f'{out_path}*.nc')
-    ds = ds.sortby('time')
+    ds = xr.open_mfdataset(f'{out_path}*.nc',decode_cf=False)
+    # Sort by time
+    ds = ds.sortby(time_dim)
+    # Make sure time is named 'time'
+    if time_dim != 'time':
+        ds = ds.rename({time_dim: 'time'})
+    
+    # Compute altitude, speed and direction
+    if process:
+        print('- Processing data')
+        # Compute wind speed and direction
+        ds = vec2wind(ds, drop_uv=drop_uv)
+    
+    # Clean some variables
+    if 'number' in ds.data_vars:
+            ds = ds.drop('number')
+    if 'expver' in ds.data_vars:
+            ds = ds.drop('expver')
+            
+    # Set compression options
+    comp = dict(zlib=True, complevel=4)
+    # Apply compression to each variable
+    encoding = {var: comp for var in ds.data_vars}
     
     # Save if requested
     if save_path is not None:
-        ds.to_netcdf(save_path)
-        
+        print(f'- Saving data to {save_path}')
+        ds.load().to_netcdf(save_path, encoding=encoding)
+    
     return ds
     
     
@@ -317,36 +343,33 @@ def getPoint(df, lat, lon):
         # print(df.head())
         return df.loc[latVal, lonVal, :]
     
-def vec2wind(df, drop_uv=True):
+def vec2wind(ds, drop_uv=True):
     """
     Converts vector components (u and v) to wind speed and direction.
 
     Parameters:
-    - df (pandas.DataFrame or xarray.Dataset): The input data containing vector components.
+    - ds (pandas.DataFrame or xarray.Dataset): The input data containing vector components.
     - drop_uv (bool, optional): Whether to drop the u and v columns after conversion. Default is True.
 
     Returns:
-    - df (pandas.DataFrame or xarray.Dataset): The input data with added columns for wind speed and direction.
+    - ds (pandas.DataFrame or xarray.Dataset): The input data with added columns for wind speed and direction.
     """
     
-    # Compute velocity and direction from u and v
-    df['speed'] = np.sqrt(np.power(df['u'],2) + np.power(df['v'],2))
-    df['direction'] = np.degrees(np.arctan2(df['u'],df['v']))
-    
-    # Correct directions
-    if isinstance(df, xr.core.dataset.Dataset):
-        df = xr.where(df.direction<0, 360+df.direction, df.direction )
-    else:
-        df.loc[df['direction']<0, 'direction'] = 360 + df.loc[df['direction']<0, 'direction']
+    # Get elevation in m asl
+    ds['altitude'] = ds['z']/9.80665 
+    # Compute wind direction
+    ds['wind_direction'] = (np.arctan2(ds['v'], ds['u']) * 180 / np.pi) % 360
+    # Compute wind speed
+    ds['wind_speed'] = np.sqrt(ds['u']**2 + ds['v']**2)
 
     # Drop u and v if requested
     if drop_uv:
-        if isinstance(df, xr.core.dataset.Dataset):
-            df = df.drop(['u', 'v'])
+        if isinstance(ds, xr.core.dataset.Dataset):
+            ds = ds.drop(['u', 'v'])
         else:
-            df = df.drop(['u', 'v'], axis=1)
+            ds = ds.drop(['u', 'v'], axis=1)
         
-    return df
+    return ds
 
 def getLevel(df, alt):
 
