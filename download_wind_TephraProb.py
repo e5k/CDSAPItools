@@ -6,7 +6,7 @@ from CDSAPItools import *
 import pandas as pd
 
 
-# %%
+# %% Tansen ###################################
 # Set spatio-temporal properties of dataset:
 # Time of dataset
 year_start  = 2015
@@ -24,7 +24,7 @@ out_path    = '/Users/seb/Documents/WORK/Students/UNIGE Masters/Tansen Rahman/Wi
 # Prepend file number to output file name (useful for TephraProb)
 # prepend = True
 
-# %% Guatemala
+# %% Guatemala ###################################
 # Set spatio-temporal properties of dataset:
 # Time of dataset
 year_start  = 2010
@@ -40,8 +40,32 @@ area = [15.5, -92.5, 13.5, -89.5]
 out_path    = '/Users/seb/Documents/CONTRACTS/IDMC/Datasets/Guatemala/ERA5'
 hourList = [x+':00' for x in ['00', '06', '12', '18']]
 
-# Prepend file number to output file name (useful for TephraProb)
-# prepend = True
+
+
+
+# %% Etna ###################################
+# Set spatio-temporal properties of dataset:
+# Time of dataset
+year_start  = 2014
+year_end    = 2023
+month_start = 1
+month_end   = 12
+
+# Define area [north, west, south, east]
+area = set_area(37.750320, 14.993779, single_point=True)    
+
+# Set some global parameters
+out_path    = '/Users/seb/Documents/WORK/Students/UCLouvain/Master/Zoe Saintrain/wind-etna-2014-2023'
+hourList = [x+':00' for x in ['00', '06', '12', '18']]
+
+dataset = 'reanalysis-era5-pressure-levels'
+
+# Choose the variables as a function of the selected dataset. 
+# Note: default values are available as `plevelList`, `dayList`, `hourList`
+variableList = ['geopotential', 'u_component_of_wind', 'v_component_of_wind']
+grid = [0.25, 0.25]
+
+
 # %%
 dataset = 'reanalysis-era5-pressure-levels'
 
@@ -50,8 +74,8 @@ dataset = 'reanalysis-era5-pressure-levels'
 variableList = ['geopotential', 'u_component_of_wind', 'v_component_of_wind']
 grid = [0.25, 0.25]
 
-###################################
-##% Geneva
+
+##% Geneva ###################################
 # Set spatio-temporal properties of dataset:
 # Time of dataset
 year_start  = 2010
@@ -100,15 +124,11 @@ checkERA(out_path)
 #%%
 # ds = loadNc(out_path+'/', '/Users/seb/Documents/WORK/Students/UNIGE Masters/Tansen Rahman/2015-2016.nc', process=True)
 ds = loadNc(out_path+'/', '/Users/seb/Documents/CONTRACTS/IDMC/Datasets/Guatemala/ERA5_2010-2022.nc', process=True)
-ds = loadNc(out_path+'/', '/Users/seb/Documents/CONTRACTS/IDMC/Datasets/Guatemala/ERA5_2010-2022_test.nc', process=True, drop_uv=False)
 
 #%% Geneva
-ds = loadNc(out_path+'/', '/Users/seb/Documents/WORK/Students/UNIGE Masters/Tansen Rahman/ERA5_2010-2013_test.nc', process=True, drop_uv=False)
+ds = loadNc(out_path+'/', '/Users/seb/Documents/WORK/Students/UNIGE Masters/Tansen Rahman/ERA5_Geneva_2010-2020.nc', process=True, drop_uv=False)
 
 #%%
-import xarray
-test = xarray.open_dataset('/Users/seb/Documents/WORK/Students/UNIGE Masters/Tansen Rahman/ERA5_2010-2013_test.nc')
-
 
 # # Correct directions
 # if isinstance(df, xr.core.dataset.Dataset):

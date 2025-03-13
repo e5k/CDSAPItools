@@ -26,6 +26,43 @@ dayList = ['01', '02', '03','04', '05', '06','07', '08', '09','10', '11', '12','
 hourList = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
 
 # %%
+
+def set_area(lat, lon, nx=1, ny=1, res=0.25, single_point=False):
+    """
+    Create a bounding box for a grid centered on the closest ERA5 grid point to (lat, lon)
+    and expands it by (nx, ny) and resolution res (e.g., nx=1 and ny=1 will return a 3x3 grid).
+
+    Parameters:
+        lat (float): Latitude of the target point.
+        lon (float): Longitude of the target point.
+        nx (int): Number of grid points by which to expand the center point in the longitudinal direction (default 1).
+        ny (int): Number of grid points by which to expand the center point in the latitudinal direction (default 1).
+        res (float): Grid resolution in degrees (default 0.25 for ERA5).
+        single_point (bool): If True, return the bounding box as a single point (default False).
+
+    Returns:
+        list: Bounding box coordinates [North, West, South, East].
+    """
+    
+    if single_point:
+        return [lat, lon, lat, lon]
+    else:
+        # Snap to the closest grid point
+        center_lat = np.round(lat / res) * res
+        center_lon = np.round(lon / res) * res
+
+        # Calculate half-extent based on grid size
+        lat_extent = (ny * res) / 2
+        lon_extent = (nx * res) / 2
+
+        # Define the bounding box
+        north = center_lat + lat_extent
+        south = center_lat - lat_extent
+        west = center_lon - lon_extent
+        east = center_lon + lon_extent
+
+        return [north, west, south, east]
+
 def make_date_vec(year_start, year_end, month_start, month_end, day_start=None, day_end=None):
     """
     Generate a list of date vectors based on the specified start and end years, months, and days.
