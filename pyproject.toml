@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cdsapitools"
+version = "0.1.0"
+description = "Wrapper to download ERA5"
+readme = "README.md"
+authors = [
+    { name = "Seb Biass", email = "sebastien.biasse@unige.ch" }
+]
+license = { text = "MIT" }
+dependencies = [
+    "requests",
+    "numpy",
+    "xarray",
+    "pandas",
+    "geopandas",
+    "windrose",
+    "cdsapi",
+    "schedule"
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+
+[project.scripts]
+my_project = "cdsapitools.main:main"
+
+[tool.setuptools]
+packages = ["cdsapitools"]

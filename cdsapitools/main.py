@@ -20,6 +20,10 @@ import xarray as xr
 from windrose import WindroseAxes
 import matplotlib.cm as cm
 
+__all__ = [
+    'plevelList', 'dayList', 'hourList', 'set_area', 'make_date_vec', 'submitERA', 
+    'checkERA', 'queue', 'loadNc', 'ncTodf', 'getPoint', 'vec2wind', 'getLevel', 'findNearest'
+]
 
 plevelList = ['1', '2', '3','5', '7', '10','20', '30', '50','70', '100', '125','150', '175', '200','225', '250', '300','350', '400', '450','500', '550', '600','650', '700', '750','775', '800', '825','850', '875', '900','925', '950', '975','1000']
 dayList = ['01', '02', '03','04', '05', '06','07', '08', '09','10', '11', '12','13', '14', '15','16', '17', '18','19', '20', '21','22', '23', '24','25', '26', '27','28', '29', '30','31']
@@ -154,10 +158,6 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
     else:
         date_vec = make_date_vec(year_start, year_end, month_start, month_end, day_start=day_start, day_end=day_end)
 
-    # Setup area
-    # if rDict['area'][1]<0: rDict['area'][1]=360+rDict['area'][1]
-    # if rDict['area'][3]<0: rDict['area'][3]=360+rDict['area'][3]
-
     # Check that last day actually matches what is specified in year/month 2022-03-18
     day_end = day_end if day_end==calendar.monthrange(year_end,month_end)[1] else calendar.monthrange(year_end,month_end)[1]
     
@@ -185,12 +185,6 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
             day, month, year = iDate[0], iDate[1], iDate[2]
             print(f'Accessing {dataset} data for {day}/{month}/{year}')
             
-            # 2022-03-18 using /to/ was returning an error when not using the `-complete` dataset required for WRF. This seems to fix it
-            # if dataset == 'reanalysis-era5-complete':
-            #     rDict['date'] = f'{year}{month:02d}{day:02d}/to/{year}{month:02d}{day:02d}'
-            # else:
-            #     rDict['date'] = f'{year}{month:02d}{day:02d}/{year}{month:02d}{day:02d}'
-
             # 2022-11-02 Trying Alex's approach
             rDict['date'] = f'{year}{month:02d}{day:02d}'
             
@@ -204,10 +198,8 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
 
         # Update the storage
         if dt == 'month':
-            # df = df.append(pd.DataFrame({'r': r.reply['request_id'], 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count]))
             df = pd.concat([df, pd.DataFrame({'r': r.reply['request_id'], 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count])])
         else:
-            # df = df.append(pd.DataFrame({'r': r.reply['request_id'], 'day': day, 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count]))
             df = pd.concat([pd.DataFrame({'r': r.reply['request_id'], 'day': day, 'month': month, 'year': year, 'format': format, 'completed': False}, index=[count])])
             
         count += 1
