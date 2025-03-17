@@ -146,7 +146,8 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
     - dt (str, optional): The time interval of the request. Can be 'month' or 'day'. Defaults to 'month'.
 
     Returns:
-    None
+    - str: The request ID of the last job submitted.
+
     """
     
     # Make sure the folder exists
@@ -206,6 +207,9 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
     
     # Save storage to file
     df.to_csv(f'{out_path}/ERA5props.csv')
+    
+    # Return the id of the last job (useful when resubmitting failed jobs)
+    return r.reply['request_id']
     
 def checkERA(out_path, prepend=False):
     """
@@ -278,6 +282,35 @@ def checkERA(out_path, prepend=False):
         
 def queue():
     webbrowser.open('https://cds.climate.copernicus.eu/requests?tab=all', new=0, autoraise=True)
+
+def submitFailed(out_path, dataset, rDict):
+    """
+    Resubmits failed jobs for a given dataset and updates the job IDs in the CSV file.
+
+    Parameters:
+    out_path (str): The output directory path where the CSV file is located.
+    dataset (str): The dataset name to be used for resubmission.
+    rDict (dict): A dictionary containing request parameters for the dataset.
+
+    Returns:
+    None
+    """
+    
+    # Read the CSV file containing the request information
+    df = pd.read_csv(f'{out_path}/ERA5props.csv', index_col=0)
+    
+    # Filter the dataframe to get only the rows where the request was not completed
+    dfF = df.loc[df['completed'] == False]
+    
+    # Loop through the filtered dataframe and resubmit the failed jobs
+    for i in dfF.index:
+        jobID = submitERA(out_path, dfF.loc[i, 'year'], dfF.loc[i, 'year'], dfF.loc[i, 'month'], dfF.loc[i, 'month'], dataset, rDict)  
+        # Update the request ID in the original dataframe
+        df.loc[i, 'r'] = jobID
+    
+    # Save the updated dataframe back to the CSV file
+    df.to_csv(f'{out_path}/ERA5props.csv')
+
 
 def loadNc(out_path, save_path=None, time_dim='valid_time', process=True, drop_uv=True, dtype=np.int16):
     """

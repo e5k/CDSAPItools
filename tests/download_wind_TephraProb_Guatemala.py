@@ -2,19 +2,19 @@
 import cdsapitools.main as cds
 import schedule
 
-#%% Etna
+#%% Guatemala
 # Set spatio-temporal properties of dataset:
 # Time of dataset
-year_start  = 2014
-year_end    = 2023
+year_start  = 1990
+year_end    = 1990
 month_start = 1
-month_end   = 12
+month_end   = 2
 
 # Define area [north, west, south, east]
-area = cds.set_area(37.750320, 14.993779, single_point=True)    
+area = [15.5, -92.5, 13.5, -89.5]
 
 # Set some global parameters
-out_path = '/Users/seb/Documents/WORK/Students/UCLouvain/Master/Zoe Saintrain/wind-etna-2014-2023'
+out_path = '/var/services/homes/seb/ERA/Guatemala1900-2000'
 hourList = [x+':00' for x in ['00', '06', '12', '18']]
 
 # Choose the dataset
@@ -42,18 +42,12 @@ rDict = {
 cds.submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict)
 
 #%% Check the status
-cds.checkERA(out_path)
+# cds.checkERA(out_path)
 
 #%% Open the website to see the queue
-cds.queue()
+# cds.queue()
 
 #%% If you want to use the scheduler to check updates daily
-# schedule.every().day.at("14:30").do(cds.checkERA(out_path))
-# while True:
-#     schedule.run_pending()
-    
-    
-#%% 
-import pandas as pd
-
-submitFailed(out_path, dataset, rDict)
+schedule.every().day.at("14:30").do(cds.checkERA(out_path))
+while True:
+    schedule.run_pending()
