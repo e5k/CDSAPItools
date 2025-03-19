@@ -1,4 +1,4 @@
-# CDSAPItools
+# cdsapitools
 
 These functions are designed to download ERA5 data per month. In other words, the function will split the required duration into 1-month intervals. The idea behind this module is to prevent having to keep a Python instance running during the entire duration of the queue process. This is implemented in two steps:
 
@@ -8,12 +8,22 @@ These functions are designed to download ERA5 data per month. In other words, th
 
 ## Requirements
 
-`CDSAPItools` require the `pandas` and `cdsapi` modules:
+`cdsapitools` require the `pandas` and `cdsapi` modules:
 
 ```bash
 pip install cdsapi pandas
-````
- 
+```
+
+To install, clone the repository and run the following command:
+
+```bash
+pip install -e .
+```
+
+## Demo
+
+- [Use `cdsapitools` for TephraProb](demo/demo_tephraProb.py)
+
 ## References:
 
 ### CDS background

@@ -128,7 +128,7 @@ def make_date_vec(year_start, year_end, month_start, month_end, day_start=None, 
                     stor.append([iD, iM, iY])
     return stor
 
-def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict, day_start=1, day_end=31, format='netcdf', dt='month'):
+def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, rDict, day_start=1, day_end=31, format='netcdf', dt='month', save_log=True):
     """
     Submits a CDS API request for each month or day of the requested time interval.
 
@@ -144,6 +144,7 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
     - day_end (int, optional): The ending day of the time interval. Defaults to 31.
     - format (str, optional): The format of the downloaded data. Defaults to 'netcdf'.
     - dt (str, optional): The time interval of the request. Can be 'month' or 'day'. Defaults to 'month'.
+    - save_log (bool, optional): Whether to save the request information to a CSV file. Defaults to True.
 
     Returns:
     - str: The request ID of the last job submitted.
@@ -206,7 +207,8 @@ def submitERA(out_path, year_start, year_end, month_start, month_end, dataset, r
         count += 1
     
     # Save storage to file
-    df.to_csv(f'{out_path}/ERA5props.csv')
+    if save_log:
+        df.to_csv(f'{out_path}/ERA5props.csv')
     
     # Return the id of the last job (useful when resubmitting failed jobs)
     return r.reply['request_id']
@@ -304,7 +306,7 @@ def submitFailed(out_path, dataset, rDict):
     
     # Loop through the filtered dataframe and resubmit the failed jobs
     for i in dfF.index:
-        jobID = submitERA(out_path, dfF.loc[i, 'year'], dfF.loc[i, 'year'], dfF.loc[i, 'month'], dfF.loc[i, 'month'], dataset, rDict)  
+        jobID = submitERA(out_path, dfF.loc[i, 'year'], dfF.loc[i, 'year'], dfF.loc[i, 'month'], dfF.loc[i, 'month'], dataset, rDict, save_log=False)  
         # Update the request ID in the original dataframe
         df.loc[i, 'r'] = jobID
     
