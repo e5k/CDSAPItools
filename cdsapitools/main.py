@@ -373,13 +373,13 @@ def loadNc(out_path, save_path=None, time_dim='valid_time', process=True, drop_u
         data = ds[var].values
         
         # Compute scale and offset
-        scale_factor, add_offset = calculate_scale_offset(data, dtype)
+        # scale_factor, add_offset = calculate_scale_offset(data, dtype)
         
         # Store the encoding options
         encoding[var] = {
-            "dtype": dtype.__name__,
-            "scale_factor": scale_factor,
-            "add_offset": add_offset,
+            # "dtype": dtype.__name__,
+            # "scale_factor": scale_factor,
+            # "add_offset": add_offset,
             "zlib": True,
             "complevel": 4,
         }
